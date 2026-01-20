@@ -105,9 +105,10 @@ class StoryFlowAgent(BaseAgent):
             tone_check=tone_check,
             loop_agent=loop_agent,
             sequential_agent=sequential_agent,
-            sub_agents=sub_agents_list, # Pass the sub_agents list directly
+            sub_agents=sub_agents_list,  # Pass the sub_agents list directly
         )
-# --8<-- [end:init]
+
+    # --8<-- [end:init]
 
     # --8<-- [start:executionlogic]
     @override
@@ -123,31 +124,45 @@ class StoryFlowAgent(BaseAgent):
         # 1. Initial Story Generation
         logger.info(f"[{self.name}] Running StoryGenerator...")
         async for event in self.story_generator.run_async(ctx):
-            logger.info(f"[{self.name}] Event from StoryGenerator: {event.model_dump_json(indent=2, exclude_none=True)}")
+            logger.info(
+                f"[{self.name}] Event from StoryGenerator: {event.model_dump_json(indent=2, exclude_none=True)}"
+            )
             yield event
 
         # Check if story was generated before proceeding
-        if "current_story" not in ctx.session.state or not ctx.session.state["current_story"]:
-             logger.error(f"[{self.name}] Failed to generate initial story. Aborting workflow.")
-             return # Stop processing if initial story failed
+        if (
+            "current_story" not in ctx.session.state
+            or not ctx.session.state["current_story"]
+        ):
+            logger.error(
+                f"[{self.name}] Failed to generate initial story. Aborting workflow."
+            )
+            return  # Stop processing if initial story failed
 
-        logger.info(f"[{self.name}] Story state after generator: {ctx.session.state.get('current_story')}")
-
+        logger.info(
+            f"[{self.name}] Story state after generator: {ctx.session.state.get('current_story')}"
+        )
 
         # 2. Critic-Reviser Loop
         logger.info(f"[{self.name}] Running CriticReviserLoop...")
         # Use the loop_agent instance attribute assigned during init
         async for event in self.loop_agent.run_async(ctx):
-            logger.info(f"[{self.name}] Event from CriticReviserLoop: {event.model_dump_json(indent=2, exclude_none=True)}")
+            logger.info(
+                f"[{self.name}] Event from CriticReviserLoop: {event.model_dump_json(indent=2, exclude_none=True)}"
+            )
             yield event
 
-        logger.info(f"[{self.name}] Story state after loop: {ctx.session.state.get('current_story')}")
+        logger.info(
+            f"[{self.name}] Story state after loop: {ctx.session.state.get('current_story')}"
+        )
 
         # 3. Sequential Post-Processing (Grammar and Tone Check)
         logger.info(f"[{self.name}] Running PostProcessing...")
         # Use the sequential_agent instance attribute assigned during init
         async for event in self.sequential_agent.run_async(ctx):
-            logger.info(f"[{self.name}] Event from PostProcessing: {event.model_dump_json(indent=2, exclude_none=True)}")
+            logger.info(
+                f"[{self.name}] Event from PostProcessing: {event.model_dump_json(indent=2, exclude_none=True)}"
+            )
             yield event
 
         # 4. Tone-Based Conditional Logic
@@ -157,14 +172,18 @@ class StoryFlowAgent(BaseAgent):
         if tone_check_result == "negative":
             logger.info(f"[{self.name}] Tone is negative. Regenerating story...")
             async for event in self.story_generator.run_async(ctx):
-                logger.info(f"[{self.name}] Event from StoryGenerator (Regen): {event.model_dump_json(indent=2, exclude_none=True)}")
+                logger.info(
+                    f"[{self.name}] Event from StoryGenerator (Regen): {event.model_dump_json(indent=2, exclude_none=True)}"
+                )
                 yield event
         else:
             logger.info(f"[{self.name}] Tone is not negative. Keeping current story.")
             pass
 
         logger.info(f"[{self.name}] Workflow finished.")
+
     # --8<-- [end:executionlogic]
+
 
 # --8<-- [start:llmagents]
 # --- Define the individual LLM agents ---
@@ -210,7 +229,7 @@ tone_check = LlmAgent(
 the tone is generally positive, 'negative' if the tone is generally negative, or 'neutral'
 otherwise.""",
     input_schema=None,
-    output_key="tone_check_result", # This agent's output determines the conditional flow
+    output_key="tone_check_result",  # This agent's output determines the conditional flow
 )
 # --8<-- [end:llmagents]
 
@@ -227,17 +246,21 @@ story_flow_agent = StoryFlowAgent(
 
 INITIAL_STATE = {"topic": "a brave kitten exploring a haunted house"}
 
+
 # --- Setup Runner and Session ---
 async def setup_session_and_runner():
     session_service = InMemorySessionService()
-    session = await session_service.create_session(app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID, state=INITIAL_STATE)
+    session = await session_service.create_session(
+        app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID, state=INITIAL_STATE
+    )
     logger.info(f"Initial session state: {session.state}")
     runner = Runner(
-        agent=story_flow_agent, # Pass the custom orchestrator agent
+        agent=story_flow_agent,  # Pass the custom orchestrator agent
         app_name=APP_NAME,
-        session_service=session_service
+        session_service=session_service,
     )
     return session_service, runner
+
 
 # --- Function to Interact with the Agent ---
 async def call_agent_async(user_input_topic: str):
@@ -252,25 +275,34 @@ async def call_agent_async(user_input_topic: str):
     current_session.state["topic"] = user_input_topic
     logger.info(f"Updated session state topic to: {user_input_topic}")
 
-    content = types.Content(role='user', parts=[types.Part(text=f"Generate a story about the preset topic.")])
-    events = runner.run_async(user_id=USER_ID, session_id=SESSION_ID, new_message=content)
+    content = types.Content(
+        role="user",
+        parts=[types.Part(text=f"Generate a story about the preset topic.")],
+    )
+    events = runner.run_async(
+        user_id=USER_ID, session_id=SESSION_ID, new_message=content
+    )
 
     final_response = "No final response captured."
     async for event in events:
         if event.is_final_response() and event.content and event.content.parts:
-            logger.info(f"Potential final response from [{event.author}]: {event.content.parts[0].text}")
+            logger.info(
+                f"Potential final response from [{event.author}]: {event.content.parts[0].text}"
+            )
             final_response = event.content.parts[0].text
 
     print("\n--- Agent Interaction Result ---")
     print("Agent Final Response: ", final_response)
 
-    final_session = await session_service.get_session(app_name=APP_NAME, 
-                                                user_id=USER_ID, 
-                                                session_id=SESSION_ID)
+    final_session = await session_service.get_session(
+        app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID
+    )
     print("Final Session State:")
     import json
+
     print(json.dumps(final_session.state, indent=2))
     print("-------------------------------\n")
+
 
 # --- Run the Agent ---
 # Note: In Colab, you can directly use 'await' at the top level.

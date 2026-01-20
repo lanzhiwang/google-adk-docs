@@ -14,8 +14,10 @@
 
 from google.adk.agents.parallel_agent import ParallelAgent
 from google.adk.agents.llm_agent import LlmAgent
+
 # Import SequentialAgent to orchestrate the parallel and merge steps
 from google.adk.agents.sequential_agent import SequentialAgent
+
 # Use InMemoryRunner for local testing/prototyping
 from google.adk.runners import InMemoryRunner
 from google.adk.tools import google_search
@@ -45,7 +47,7 @@ Output *only* the summary.
     description="Researches renewable energy sources.",
     tools=[google_search],
     # Store result in state for the merger agent
-    output_key="renewable_energy_result"
+    output_key="renewable_energy_result",
 )
 
 # Researcher 2: Electric Vehicles
@@ -61,7 +63,7 @@ Output *only* the summary.
     description="Researches electric vehicle technology.",
     tools=[google_search],
     # Store result in state for the merger agent
-    output_key="ev_technology_result"
+    output_key="ev_technology_result",
 )
 
 # Researcher 3: Carbon Capture
@@ -77,7 +79,7 @@ Output *only* the summary.
     description="Researches carbon capture methods.",
     tools=[google_search],
     # Store result in state for the merger agent
-    output_key="carbon_capture_result"
+    output_key="carbon_capture_result",
 )
 
 # --- 2. Create the ParallelAgent (Runs researchers concurrently) ---
@@ -86,7 +88,7 @@ Output *only* the summary.
 parallel_research_agent = ParallelAgent(
     name="ParallelWebResearchAgent",
     sub_agents=[researcher_agent_1, researcher_agent_2, researcher_agent_3],
-    description="Runs multiple research agents in parallel to gather information."
+    description="Runs multiple research agents in parallel to gather information.",
 )
 
 # --- 3. Define the Merger Agent (Runs *after* the parallel agents) ---
@@ -146,7 +148,7 @@ sequential_pipeline_agent = SequentialAgent(
     name="ResearchAndSynthesisPipeline",
     # Run parallel research first, then merge
     sub_agents=[parallel_research_agent, merger_agent],
-    description="Coordinates parallel research and synthesizes the results."
+    description="Coordinates parallel research and synthesizes the results.",
 )
 
 root_agent = sequential_pipeline_agent
@@ -210,7 +212,6 @@ root_agent = sequential_pipeline_agent
 
 #     except Exception as e:
 #         print(f"\n❌ An error occurred during agent execution: {e}")
-
 
 
 # initial_trigger_query = "Summarize recent sustainable tech advancements."

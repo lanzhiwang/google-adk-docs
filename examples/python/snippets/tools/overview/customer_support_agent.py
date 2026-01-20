@@ -19,9 +19,9 @@ from google.adk.sessions import InMemorySessionService
 from google.adk.tools import ToolContext
 from google.genai import types
 
-APP_NAME="customer_support_agent"
-USER_ID="user1234"
-SESSION_ID="1234"
+APP_NAME = "customer_support_agent"
+USER_ID = "user1234"
+SESSION_ID = "1234"
 
 
 def check_and_transfer(query: str, tool_context: ToolContext) -> str:
@@ -33,40 +33,50 @@ def check_and_transfer(query: str, tool_context: ToolContext) -> str:
     else:
         return f"Processed query: '{query}'. No further action needed."
 
+
 escalation_tool = FunctionTool(func=check_and_transfer)
 
 main_agent = Agent(
-    model='gemini-2.0-flash',
-    name='main_agent',
+    model="gemini-2.0-flash",
+    name="main_agent",
     instruction="""You are the first point of contact for customer support of an analytics tool. Answer general queries. If the user indicates urgency, use the 'check_and_transfer' tool.""",
-    tools=[check_and_transfer]
+    tools=[check_and_transfer],
 )
 
 support_agent = Agent(
-    model='gemini-2.0-flash',
-    name='support_agent',
-    instruction="""You are the dedicated support agent. Mentioned you are a support handler and please help the user with their urgent issue."""
+    model="gemini-2.0-flash",
+    name="support_agent",
+    instruction="""You are the dedicated support agent. Mentioned you are a support handler and please help the user with their urgent issue.""",
 )
 
 main_agent.sub_agents = [support_agent]
 
+
 # Session and Runner
 async def setup_session_and_runner():
     session_service = InMemorySessionService()
-    session = await session_service.create_session(app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID)
-    runner = Runner(agent=main_agent, app_name=APP_NAME, session_service=session_service)
+    session = await session_service.create_session(
+        app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID
+    )
+    runner = Runner(
+        agent=main_agent, app_name=APP_NAME, session_service=session_service
+    )
     return session, runner
+
 
 # Agent Interaction
 async def call_agent_async(query):
-    content = types.Content(role='user', parts=[types.Part(text=query)])
+    content = types.Content(role="user", parts=[types.Part(text=query)])
     session, runner = await setup_session_and_runner()
-    events = runner.run_async(user_id=USER_ID, session_id=SESSION_ID, new_message=content)
+    events = runner.run_async(
+        user_id=USER_ID, session_id=SESSION_ID, new_message=content
+    )
 
     async for event in events:
         if event.is_final_response():
             final_response = event.content.parts[0].text
             print("Agent Response: ", final_response)
+
 
 # Note: In Colab, you can directly use 'await' at the top level.
 # If running this code as a standalone Python script, you'll need to use asyncio.run() or manage the event loop.

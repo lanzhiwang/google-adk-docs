@@ -50,6 +50,7 @@ bigtable_toolset = BigtableToolset(
     credentials_config=credentials_config, bigtable_tool_settings=tool_settings
 )
 
+
 # Optional
 # Create a wrapped function tool for the agent on top of the built-in
 # `execute_sql` tool in the bigtable toolset.
@@ -60,31 +61,32 @@ def count_rows_tool(
     settings: BigtableToolSettings,  # GoogleTool handles `settings`
     tool_context: ToolContext,  # GoogleTool handles `tool_context`
 ):
-  """Counts the total number of rows for a specified table.
+    """Counts the total number of rows for a specified table.
 
-  Args:
-    table_name: The name of the table for which to count rows.
+    Args:
+      table_name: The name of the table for which to count rows.
 
-  Returns:
-      The total number of rows in the table.
-  """
+    Returns:
+        The total number of rows in the table.
+    """
 
-  # Replace the following settings for a specific bigtable database.
-  PROJECT_ID = "<PROJECT_ID>"
-  INSTANCE_ID = "<INSTANCE_ID>"
+    # Replace the following settings for a specific bigtable database.
+    PROJECT_ID = "<PROJECT_ID>"
+    INSTANCE_ID = "<INSTANCE_ID>"
 
-  query = f"""
+    query = f"""
   SELECT count(*) FROM {table_name}
     """
 
-  return query_tool.execute_sql(
-      project_id=PROJECT_ID,
-      instance_id=INSTANCE_ID,
-      query=query,
-      credentials=credentials,
-      settings=settings,
-      tool_context=tool_context,
-  )
+    return query_tool.execute_sql(
+        project_id=PROJECT_ID,
+        instance_id=INSTANCE_ID,
+        query=query,
+        credentials=credentials,
+        settings=settings,
+        tool_context=tool_context,
+    )
+
 
 # Agent Definition
 bigtable_agent = Agent(
@@ -135,6 +137,7 @@ def call_agent(query):
         if event.is_final_response():
             final_response = event.content.parts[0].text
             print("AGENT:", final_response)
+
 
 # Replace the bigtable instance and table names below with your own.
 call_agent("List all tables in projects/<PROJECT_ID>/instances/<INSTANCE_ID>")

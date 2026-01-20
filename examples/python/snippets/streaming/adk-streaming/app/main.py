@@ -69,7 +69,7 @@ async def start_agent_session(user_id, is_audio=False):
     modality = "AUDIO" if is_audio else "TEXT"
     run_config = RunConfig(
         response_modalities=[modality],
-        session_resumption=types.SessionResumptionConfig()
+        session_resumption=types.SessionResumptionConfig(),
     )
 
     # Create a LiveRequestQueue for this session
@@ -98,20 +98,20 @@ async def agent_to_client_sse(live_events):
             continue
 
         # Read the Content and its first Part
-        part: Part = (
-            event.content and event.content.parts and event.content.parts[0]
-        )
+        part: Part = event.content and event.content.parts and event.content.parts[0]
         if not part:
             continue
 
         # If it's audio, send Base64 encoded audio data
-        is_audio = part.inline_data and part.inline_data.mime_type.startswith("audio/pcm")
+        is_audio = part.inline_data and part.inline_data.mime_type.startswith(
+            "audio/pcm"
+        )
         if is_audio:
             audio_data = part.inline_data and part.inline_data.data
             if audio_data:
                 message = {
                     "mime_type": "audio/pcm",
-                    "data": base64.b64encode(audio_data).decode("ascii")
+                    "data": base64.b64encode(audio_data).decode("ascii"),
                 }
                 yield f"data: {json.dumps(message)}\n\n"
                 print(f"[AGENT TO CLIENT]: audio/pcm: {len(audio_data)} bytes.")
@@ -119,10 +119,7 @@ async def agent_to_client_sse(live_events):
 
         # If it's text and a partial text, send it
         if part.text and event.partial:
-            message = {
-                "mime_type": "text/plain",
-                "data": part.text
-            }
+            message = {"mime_type": "text/plain", "data": part.text}
             yield f"data: {json.dumps(message)}\n\n"
             print(f"[AGENT TO CLIENT]: text/plain: {message}")
 
@@ -160,7 +157,9 @@ async def sse_endpoint(user_id: int, is_audio: str = "false"):
 
     # Start agent session
     user_id_str = str(user_id)
-    live_events, live_request_queue = await start_agent_session(user_id_str, is_audio == "true")
+    live_events, live_request_queue = await start_agent_session(
+        user_id_str, is_audio == "true"
+    )
 
     # Store the request queue for this user
     active_sessions[user_id_str] = live_request_queue
@@ -189,8 +188,8 @@ async def sse_endpoint(user_id: int, is_audio: str = "false"):
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
             "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Headers": "Cache-Control"
-        }
+            "Access-Control-Allow-Headers": "Cache-Control",
+        },
     )
 
 

@@ -17,6 +17,7 @@ import asyncio
 from google.adk.agents import Agent
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
+
 # from google.adk.sessions import DatabaseSessionService
 from google.adk.tools.google_tool import GoogleTool
 from google.adk.tools.spanner import query_tool
@@ -52,6 +53,7 @@ spanner_toolset = SpannerToolset(
     credentials_config=credentials_config, spanner_tool_settings=tool_settings
 )
 
+
 # Optional
 # Create a wrapped function tool for the agent on top of the built-in
 # `execute_sql` tool in the Spanner toolset.
@@ -62,33 +64,34 @@ def count_rows_tool(
     settings: SpannerToolSettings,  # GoogleTool handles `settings`
     tool_context: ToolContext,  # GoogleTool handles `tool_context`
 ):
-  """Counts the total number of rows for a specified table.
+    """Counts the total number of rows for a specified table.
 
-  Args:
-    table_name: The name of the table for which to count rows.
+    Args:
+      table_name: The name of the table for which to count rows.
 
-  Returns:
-      The total number of rows in the table.
-  """
+    Returns:
+        The total number of rows in the table.
+    """
 
-  # Replace the following settings for a specific Spanner database.
-  PROJECT_ID = "<PROJECT_ID>"
-  INSTANCE_ID = "<INSTANCE_ID>"
-  DATABASE_ID = "<DATABASE_ID>"
+    # Replace the following settings for a specific Spanner database.
+    PROJECT_ID = "<PROJECT_ID>"
+    INSTANCE_ID = "<INSTANCE_ID>"
+    DATABASE_ID = "<DATABASE_ID>"
 
-  query = f"""
+    query = f"""
   SELECT count(*) FROM {table_name}
     """
 
-  return query_tool.execute_sql(
-      project_id=PROJECT_ID,
-      instance_id=INSTANCE_ID,
-      database_id=DATABASE_ID,
-      query=query,
-      credentials=credentials,
-      settings=settings,
-      tool_context=tool_context,
-  )
+    return query_tool.execute_sql(
+        project_id=PROJECT_ID,
+        instance_id=INSTANCE_ID,
+        database_id=DATABASE_ID,
+        query=query,
+        credentials=credentials,
+        settings=settings,
+        tool_context=tool_context,
+    )
+
 
 # Agent Definition
 spanner_agent = Agent(
@@ -126,9 +129,7 @@ session = asyncio.run(
         app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID
     )
 )
-runner = Runner(
-    agent=spanner_agent, app_name=APP_NAME, session_service=session_service
-)
+runner = Runner(agent=spanner_agent, app_name=APP_NAME, session_service=session_service)
 
 
 # Agent Interaction
@@ -145,7 +146,10 @@ def call_agent(query):
             final_response = event.content.parts[0].text
             print("AGENT:", final_response)
 
+
 # Replace the Spanner database and table names below with your own.
-call_agent("List all tables in projects/<PROJECT_ID>/instances/<INSTANCE_ID>/databases/<DATABASE_ID>")
+call_agent(
+    "List all tables in projects/<PROJECT_ID>/instances/<INSTANCE_ID>/databases/<DATABASE_ID>"
+)
 call_agent("Describe the schema of <TABLE_NAME>")
 call_agent("List the top 5 rows in <TABLE_NAME>")

@@ -1,8 +1,14 @@
 import os
 
 from google.adk.auth.auth_schemes import OpenIdConnectWithConfig
-from google.adk.auth.auth_credential import AuthCredential, AuthCredentialTypes, OAuth2Auth
-from google.adk.tools.openapi_tool.openapi_spec_parser.openapi_toolset import OpenAPIToolset
+from google.adk.auth.auth_credential import (
+    AuthCredential,
+    AuthCredentialTypes,
+    OAuth2Auth,
+)
+from google.adk.tools.openapi_tool.openapi_spec_parser.openapi_toolset import (
+    OpenAPIToolset,
+)
 from google.adk.agents.llm_agent import LlmAgent
 
 # --- Authentication Configuration ---
@@ -21,7 +27,7 @@ auth_scheme = OpenIdConnectWithConfig(
     token_endpoint="https://your-token-endpoint.okta.com/oauth2/v1/token",
     # The scopes (permissions) your application requests from the IDP.
     # 'openid' is standard for OIDC. 'profile' and 'email' request user profile info.
-    scopes=['openid', 'profile', "email"]
+    scopes=["openid", "profile", "email"],
 )
 
 # Define the Authentication Credentials for your specific application.
@@ -30,11 +36,11 @@ auth_scheme = OpenIdConnectWithConfig(
 # !! SECURITY WARNING: Avoid hardcoding secrets in production code. !!
 # !! Use environment variables or a secret management system instead. !!
 auth_credential = AuthCredential(
-  auth_type=AuthCredentialTypes.OPEN_ID_CONNECT,
-  oauth2=OAuth2Auth(
-    client_id="CLIENT_ID",
-    client_secret="CIENT_SECRET",
-  )
+    auth_type=AuthCredentialTypes.OPEN_ID_CONNECT,
+    oauth2=OAuth2Auth(
+        client_id="CLIENT_ID",
+        client_secret="CIENT_SECRET",
+    ),
 )
 
 
@@ -43,24 +49,24 @@ auth_credential = AuthCredential(
 # from steps above.
 # This sample set of tools use endpoints protected by Okta and requires an OpenID Connect flow
 # to acquire end user credentials.
-with open(os.path.join(os.path.dirname(__file__), 'spec.yaml'), 'r') as f:
+with open(os.path.join(os.path.dirname(__file__), "spec.yaml"), "r") as f:
     spec_content = f.read()
 
 userinfo_toolset = OpenAPIToolset(
-   spec_str=spec_content,
-   spec_str_type='yaml',
-   # ** Crucially, associate the authentication scheme and credentials with these tools. **
-   # This tells the ADK that the tools require the defined OIDC/OAuth2 flow.
-   auth_scheme=auth_scheme,
-   auth_credential=auth_credential,
+    spec_str=spec_content,
+    spec_str_type="yaml",
+    # ** Crucially, associate the authentication scheme and credentials with these tools. **
+    # This tells the ADK that the tools require the defined OIDC/OAuth2 flow.
+    auth_scheme=auth_scheme,
+    auth_credential=auth_credential,
 )
 
 # --- Agent Configuration ---
 # Configure and create the main LLM Agent.
 root_agent = LlmAgent(
-    model='gemini-2.0-flash',
-    name='enterprise_assistant',
-    instruction='Help user integrate with multiple enterprise systems, including retrieving user information which may require authentication.',
+    model="gemini-2.0-flash",
+    name="enterprise_assistant",
+    instruction="Help user integrate with multiple enterprise systems, including retrieving user information which may require authentication.",
     tools=userinfo_toolset.get_tools(),
 )
 

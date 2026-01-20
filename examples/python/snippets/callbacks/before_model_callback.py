@@ -17,10 +17,11 @@ from google.adk.agents.callback_context import CallbackContext
 from google.adk.models import LlmResponse, LlmRequest
 from google.adk.runners import Runner
 from typing import Optional
-from google.genai import types 
+from google.genai import types
 from google.adk.sessions import InMemorySessionService
 
-GEMINI_2_FLASH="gemini-2.0-flash"
+GEMINI_2_FLASH = "gemini-2.0-flash"
+
 
 # --- Define the Callback Function ---
 def simple_before_model_modifier(
@@ -32,21 +33,27 @@ def simple_before_model_modifier(
 
     # Inspect the last user message in the request contents
     last_user_message = ""
-    if llm_request.contents and llm_request.contents[-1].role == 'user':
-         if llm_request.contents[-1].parts:
+    if llm_request.contents and llm_request.contents[-1].role == "user":
+        if llm_request.contents[-1].parts:
             last_user_message = llm_request.contents[-1].parts[0].text
     print(f"[Callback] Inspecting last user message: '{last_user_message}'")
 
     # --- Modification Example ---
     # Add a prefix to the system instruction
-    original_instruction = llm_request.config.system_instruction or types.Content(role="system", parts=[])
+    original_instruction = llm_request.config.system_instruction or types.Content(
+        role="system", parts=[]
+    )
     prefix = "[Modified by Callback] "
     # Ensure system_instruction is Content and parts list exists
     if not isinstance(original_instruction, types.Content):
-         # Handle case where it might be a string (though config expects Content)
-         original_instruction = types.Content(role="system", parts=[types.Part(text=str(original_instruction))])
+        # Handle case where it might be a string (though config expects Content)
+        original_instruction = types.Content(
+            role="system", parts=[types.Part(text=str(original_instruction))]
+        )
     if not original_instruction.parts:
-        original_instruction.parts.append(types.Part(text="")) # Add an empty part if none exist
+        original_instruction.parts.append(
+            types.Part(text="")
+        )  # Add an empty part if none exist
 
     # Modify the text of the first part
     modified_text = prefix + (original_instruction.parts[0].text or "")
@@ -62,7 +69,9 @@ def simple_before_model_modifier(
         return LlmResponse(
             content=types.Content(
                 role="model",
-                parts=[types.Part(text="LLM call was blocked by before_model_callback.")],
+                parts=[
+                    types.Part(text="LLM call was blocked by before_model_callback.")
+                ],
             )
         )
     else:
@@ -73,35 +82,43 @@ def simple_before_model_modifier(
 
 # Create LlmAgent and Assign Callback
 my_llm_agent = LlmAgent(
-        name="ModelCallbackAgent",
-        model=GEMINI_2_FLASH,
-        instruction="You are a helpful assistant.", # Base instruction
-        description="An LLM agent demonstrating before_model_callback",
-        before_model_callback=simple_before_model_modifier # Assign the function here
+    name="ModelCallbackAgent",
+    model=GEMINI_2_FLASH,
+    instruction="You are a helpful assistant.",  # Base instruction
+    description="An LLM agent demonstrating before_model_callback",
+    before_model_callback=simple_before_model_modifier,  # Assign the function here
 )
 
 APP_NAME = "guardrail_app"
 USER_ID = "user_1"
 SESSION_ID = "session_001"
 
+
 # Session and Runner
 async def setup_session_and_runner():
     session_service = InMemorySessionService()
-    session = await session_service.create_session(app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID)
-    runner = Runner(agent=my_llm_agent, app_name=APP_NAME, session_service=session_service)
+    session = await session_service.create_session(
+        app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID
+    )
+    runner = Runner(
+        agent=my_llm_agent, app_name=APP_NAME, session_service=session_service
+    )
     return session, runner
 
 
 # Agent Interaction
 async def call_agent_async(query):
-    content = types.Content(role='user', parts=[types.Part(text=query)])
+    content = types.Content(role="user", parts=[types.Part(text=query)])
     session, runner = await setup_session_and_runner()
-    events = runner.run_async(user_id=USER_ID, session_id=SESSION_ID, new_message=content)
+    events = runner.run_async(
+        user_id=USER_ID, session_id=SESSION_ID, new_message=content
+    )
 
     async for event in events:
         if event.is_final_response():
             final_response = event.content.parts[0].text
             print("Agent Response: ", final_response)
+
 
 # Note: In Colab, you can directly use 'await' at the top level.
 # If running this code as a standalone Python script, you'll need to use asyncio.run() or manage the event loop.

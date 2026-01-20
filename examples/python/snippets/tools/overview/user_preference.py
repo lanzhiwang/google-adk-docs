@@ -1,5 +1,6 @@
 from google.adk.tools import ToolContext, FunctionTool
 
+
 def update_user_preference(preference: str, value: str, tool_context: ToolContext):
     """Updates a user-specific preference."""
     user_prefs_key = "user:preferences"
@@ -10,6 +11,7 @@ def update_user_preference(preference: str, value: str, tool_context: ToolContex
     tool_context.state[user_prefs_key] = preferences
     print(f"Tool: Updated user preference '{preference}' to '{value}'")
     return {"status": "success", "updated_preference": preference}
+
 
 pref_tool = FunctionTool(func=update_user_preference)
 

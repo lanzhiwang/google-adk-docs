@@ -15,7 +15,7 @@
 from google.adk.agents import LlmAgent
 from google.adk.runners import Runner
 from typing import Optional
-from google.genai import types 
+from google.genai import types
 from google.adk.sessions import InMemorySessionService
 from google.adk.tools import FunctionTool
 from google.adk.tools.tool_context import ToolContext
@@ -23,7 +23,8 @@ from google.adk.tools.base_tool import BaseTool
 from typing import Dict, Any
 from copy import deepcopy
 
-GEMINI_2_FLASH="gemini-2.0-flash"
+GEMINI_2_FLASH = "gemini-2.0-flash"
+
 
 # --- Define a Simple Tool Function (Same as before) ---
 def get_capital_city(country: str) -> str:
@@ -35,10 +36,16 @@ def get_capital_city(country: str) -> str:
         "france": "Paris",
         "germany": "Berlin",
     }
-    return {"result": country_capitals.get(country.lower(), f"Capital not found for {country}")}
+    return {
+        "result": country_capitals.get(
+            country.lower(), f"Capital not found for {country}"
+        )
+    }
+
 
 # --- Wrap the function into a Tool ---
 capital_tool = FunctionTool(func=get_capital_city)
+
 
 # --- Define the Callback Function ---
 def simple_after_tool_modifier(
@@ -57,16 +64,18 @@ def simple_after_tool_modifier(
 
     # --- Modification Example ---
     # If the tool was 'get_capital_city' and result is 'Washington, D.C.'
-    if tool_name == 'get_capital_city' and original_result_value == "Washington, D.C.":
+    if tool_name == "get_capital_city" and original_result_value == "Washington, D.C.":
         print("[Callback] Detected 'Washington, D.C.'. Modifying tool response.")
 
         # IMPORTANT: Create a new dictionary or modify a copy
         modified_response = deepcopy(tool_response)
-        modified_response["result"] = f"{original_result_value} (Note: This is the capital of the USA)."
-        modified_response["note_added_by_callback"] = True # Add extra info if needed
+        modified_response["result"] = (
+            f"{original_result_value} (Note: This is the capital of the USA)."
+        )
+        modified_response["note_added_by_callback"] = True  # Add extra info if needed
 
         print(f"[Callback] Modified tool_response: {modified_response}")
-        return modified_response # Return the modified dictionary
+        return modified_response  # Return the modified dictionary
 
     print("[Callback] Passing original tool response through.")
     # Return None to use the original tool_response
@@ -75,36 +84,44 @@ def simple_after_tool_modifier(
 
 # Create LlmAgent and Assign Callback
 my_llm_agent = LlmAgent(
-        name="AfterToolCallbackAgent",
-        model=GEMINI_2_FLASH,
-        instruction="You are an agent that finds capital cities using the get_capital_city tool. Report the result clearly.",
-        description="An LLM agent demonstrating after_tool_callback",
-        tools=[capital_tool], # Add the tool
-        after_tool_callback=simple_after_tool_modifier # Assign the callback
-    )
+    name="AfterToolCallbackAgent",
+    model=GEMINI_2_FLASH,
+    instruction="You are an agent that finds capital cities using the get_capital_city tool. Report the result clearly.",
+    description="An LLM agent demonstrating after_tool_callback",
+    tools=[capital_tool],  # Add the tool
+    after_tool_callback=simple_after_tool_modifier,  # Assign the callback
+)
 
 APP_NAME = "guardrail_app"
 USER_ID = "user_1"
 SESSION_ID = "session_001"
 
+
 # Session and Runner
 async def setup_session_and_runner():
     session_service = InMemorySessionService()
-    session = await session_service.create_session(app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID)
-    runner = Runner(agent=my_llm_agent, app_name=APP_NAME, session_service=session_service)
+    session = await session_service.create_session(
+        app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID
+    )
+    runner = Runner(
+        agent=my_llm_agent, app_name=APP_NAME, session_service=session_service
+    )
     return session, runner
 
 
 # Agent Interaction
 async def call_agent_async(query):
-    content = types.Content(role='user', parts=[types.Part(text=query)])
+    content = types.Content(role="user", parts=[types.Part(text=query)])
     session, runner = await setup_session_and_runner()
-    events = runner.run_async(user_id=USER_ID, session_id=SESSION_ID, new_message=content)
+    events = runner.run_async(
+        user_id=USER_ID, session_id=SESSION_ID, new_message=content
+    )
 
     async for event in events:
         if event.is_final_response():
             final_response = event.content.parts[0].text
             print("Agent Response: ", final_response)
+
 
 # Note: In Colab, you can directly use 'await' at the top level.
 # If running this code as a standalone Python script, you'll need to use asyncio.run() or manage the event loop.

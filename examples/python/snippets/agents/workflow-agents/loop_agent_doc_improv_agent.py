@@ -26,9 +26,9 @@ from typing import AsyncGenerator, Optional
 from google.adk.events import Event, EventActions
 
 # --- Constants ---
-APP_NAME = "doc_writing_app_v3" # New App Name
+APP_NAME = "doc_writing_app_v3"  # New App Name
 USER_ID = "dev_user_01"
-SESSION_ID_BASE = "loop_exit_tool_session" # New Base Session ID
+SESSION_ID_BASE = "loop_exit_tool_session"  # New Base Session ID
 GEMINI_MODEL = "gemini-2.0-flash"
 STATE_INITIAL_TOPIC = "initial_topic"
 
@@ -38,14 +38,16 @@ STATE_CRITICISM = "criticism"
 # Define the exact phrase the Critic should use to signal completion
 COMPLETION_PHRASE = "No major issues found."
 
+
 # --- Tool Definition ---
 def exit_loop(tool_context: ToolContext):
-  """Call this function ONLY when the critique indicates no further changes are needed, signaling the iterative process should end."""
-  print(f"  [Tool Call] exit_loop triggered by {tool_context.agent_name}")
-  tool_context.actions.escalate = True
-  tool_context.actions.skip_summarization = True
-  # Return empty dict as tools should typically return JSON-serializable output
-  return {}
+    """Call this function ONLY when the critique indicates no further changes are needed, signaling the iterative process should end."""
+    print(f"  [Tool Call] exit_loop triggered by {tool_context.agent_name}")
+    tool_context.actions.escalate = True
+    tool_context.actions.skip_summarization = True
+    # Return empty dict as tools should typically return JSON-serializable output
+    return {}
+
 
 # --- Agent Definitions ---
 
@@ -53,7 +55,7 @@ def exit_loop(tool_context: ToolContext):
 initial_writer_agent = LlmAgent(
     name="InitialWriterAgent",
     model=GEMINI_MODEL,
-    include_contents='none',
+    include_contents="none",
     # MODIFIED Instruction: Ask for a slightly more developed start
     instruction=f"""You are a Creative Writing Assistant tasked with starting a story.
     Write the *first draft* of a short story (aim for 2-4 sentences).
@@ -63,14 +65,14 @@ initial_writer_agent = LlmAgent(
     Output *only* the story/document text. Do not add introductions or explanations.
 """,
     description="Writes the initial document draft based on the topic, aiming for some initial substance.",
-    output_key=STATE_CURRENT_DOC
+    output_key=STATE_CURRENT_DOC,
 )
 
 # STEP 2a: Critic Agent (Inside the Refinement Loop)
 critic_agent_in_loop = LlmAgent(
     name="CriticAgent",
     model=GEMINI_MODEL,
-    include_contents='none',
+    include_contents="none",
     # MODIFIED Instruction: More nuanced completion criteria, look for clear improvement paths.
     instruction=f"""You are a Constructive Critic AI reviewing a short document draft (typically 2-6 sentences). Your goal is balanced feedback.
 
@@ -91,7 +93,7 @@ critic_agent_in_loop = LlmAgent(
     Do not add explanations. Output only the critique OR the exact completion phrase.
 """,
     description="Reviews the current draft, providing critique if clear improvements are needed, otherwise signals completion.",
-    output_key=STATE_CRITICISM
+    output_key=STATE_CRITICISM,
 )
 
 
@@ -100,7 +102,7 @@ refiner_agent_in_loop = LlmAgent(
     name="RefinerAgent",
     model=GEMINI_MODEL,
     # Relies solely on state via placeholders
-    include_contents='none',
+    include_contents="none",
     instruction=f"""You are a Creative Writing Assistant refining a document based on feedback OR exiting the process.
     **Current Document:**
     ```
@@ -119,8 +121,8 @@ refiner_agent_in_loop = LlmAgent(
     Do not add explanations. Either output the refined document OR call the exit_loop function.
 """,
     description="Refines the document based on critique, or calls exit_loop if critique indicates completion.",
-    tools=[exit_loop], # Provide the exit_loop tool
-    output_key=STATE_CURRENT_DOC # Overwrites state['current_document'] with the refined version
+    tools=[exit_loop],  # Provide the exit_loop tool
+    output_key=STATE_CURRENT_DOC,  # Overwrites state['current_document'] with the refined version
 )
 
 
@@ -132,7 +134,7 @@ refinement_loop = LoopAgent(
         critic_agent_in_loop,
         refiner_agent_in_loop,
     ],
-    max_iterations=5 # Limit loops
+    max_iterations=5,  # Limit loops
 )
 
 # STEP 3: Overall Sequential Pipeline
@@ -140,10 +142,10 @@ refinement_loop = LoopAgent(
 root_agent = SequentialAgent(
     name="IterativeWritingPipeline",
     sub_agents=[
-        initial_writer_agent, # Run first to create initial doc
-        refinement_loop       # Then run the critique/refine loop
+        initial_writer_agent,  # Run first to create initial doc
+        refinement_loop,  # Then run the critique/refine loop
     ],
-    description="Writes an initial document and then iteratively refines it with critique using an exit tool."
+    description="Writes an initial document and then iteratively refines it with critique using an exit tool.",
 )
 # --8<-- [end:init]
 

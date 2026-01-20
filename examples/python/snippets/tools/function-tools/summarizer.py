@@ -18,9 +18,9 @@ from google.adk.sessions import InMemorySessionService
 from google.adk.tools.agent_tool import AgentTool
 from google.genai import types
 
-APP_NAME="summary_agent"
-USER_ID="user1234"
-SESSION_ID="1234"
+APP_NAME = "summary_agent"
+USER_ID = "user1234"
+SESSION_ID = "1234"
 
 summary_agent = Agent(
     model="gemini-2.0-flash",
@@ -30,25 +30,32 @@ summary_agent = Agent(
 )
 
 root_agent = Agent(
-    model='gemini-2.0-flash',
-    name='root_agent',
+    model="gemini-2.0-flash",
+    name="root_agent",
     instruction="""You are a helpful assistant. When the user provides a text, use the 'summarize' tool to generate a summary. Always forward the user's message exactly as received to the 'summarize' tool, without modifying or summarizing it yourself. Present the response from the tool to the user.""",
-    tools=[AgentTool(agent=summary_agent, skip_summarization=True)]
+    tools=[AgentTool(agent=summary_agent, skip_summarization=True)],
 )
+
 
 # Session and Runner
 async def setup_session_and_runner():
     session_service = InMemorySessionService()
-    session = await session_service.create_session(app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID)
-    runner = Runner(agent=root_agent, app_name=APP_NAME, session_service=session_service)
+    session = await session_service.create_session(
+        app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID
+    )
+    runner = Runner(
+        agent=root_agent, app_name=APP_NAME, session_service=session_service
+    )
     return session, runner
 
 
 # Agent Interaction
 async def call_agent_async(query):
-    content = types.Content(role='user', parts=[types.Part(text=query)])
+    content = types.Content(role="user", parts=[types.Part(text=query)])
     session, runner = await setup_session_and_runner()
-    events = runner.run_async(user_id=USER_ID, session_id=SESSION_ID, new_message=content)
+    events = runner.run_async(
+        user_id=USER_ID, session_id=SESSION_ID, new_message=content
+    )
 
     async for event in events:
         if event.is_final_response():

@@ -17,14 +17,15 @@ import os
 from google.adk.agents.sequential_agent import SequentialAgent
 from google.adk.agents.llm_agent import LlmAgent
 from google.genai import types
+
 # Change 1: Import InMemoryRunner instead of Runner/InMemorySessionService
 from google.adk.runners import InMemoryRunner
-from typing import Optional # For type hints
+from typing import Optional  # For type hints
 
 # --- Constants ---
 APP_NAME = "code_pipeline_app"
 USER_ID = "dev_user_01"
-SESSION_ID = "pipeline_session_02" # Use a unique session ID for each run if desired
+SESSION_ID = "pipeline_session_02"  # Use a unique session ID for each run if desired
 GEMINI_MODEL = "gemini-2.0-flash"
 
 
@@ -45,7 +46,7 @@ Output *only* the complete Python code block, enclosed in triple backticks (```p
 Do not add any other text before or after the code block.
 """,
     description="Writes initial Python code based on a specification.",
-    output_key="generated_code" # Stores output in state['generated_code']
+    output_key="generated_code",  # Stores output in state['generated_code']
 )
 
 # Code Reviewer Agent
@@ -75,7 +76,7 @@ If the code is excellent and requires no changes, simply state: "No major issues
 Output *only* the review comments or the "No major issues" statement.
 """,
     description="Reviews code and provides feedback.",
-    output_key="review_comments", # Stores output in state['review_comments']
+    output_key="review_comments",  # Stores output in state['review_comments']
 )
 
 
@@ -106,7 +107,7 @@ Output *only* the final, refactored Python code block, enclosed in triple backti
 Do not add any other text before or after the code block.
 """,
     description="Refactors code based on review comments.",
-    output_key="refactored_code", # Stores output in state['refactored_code']
+    output_key="refactored_code",  # Stores output in state['refactored_code']
 )
 
 
@@ -142,7 +143,7 @@ root_agent = code_pipeline_agent
 #     # --- Explicit Session Creation/Check BEFORE run_async ---
 #     session_service = runner.session_service
 #     session = session_service.create_session(app_name=APP_NAME, user_id=user_id, session_id=session_id)
-  
+
 #     # --- Run the Agent ---
 #     async for event in runner.run_async(
 #         user_id=user_id, session_id=session_id, new_message=content

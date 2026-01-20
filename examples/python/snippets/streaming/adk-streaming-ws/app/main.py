@@ -62,6 +62,7 @@ runner = Runner(
     session_service=session_service,
 )
 
+
 async def start_agent_session(user_id, is_audio=False):
     """Starts an agent session"""
 
@@ -85,7 +86,11 @@ async def start_agent_session(user_id, is_audio=False):
     # You cannot use both modalities simultaneously in the same session
 
     # Force AUDIO modality for native audio models regardless of client preference
-    model_name = root_agent.model if isinstance(root_agent.model, str) else root_agent.model.model
+    model_name = (
+        root_agent.model
+        if isinstance(root_agent.model, str)
+        else root_agent.model.model
+    )
     is_native_audio = "native-audio" in model_name.lower()
 
     modality = "AUDIO" if (is_audio or is_native_audio) else "TEXT"
@@ -96,7 +101,9 @@ async def start_agent_session(user_id, is_audio=False):
         streaming_mode=StreamingMode.BIDI,
         response_modalities=[modality],
         session_resumption=types.SessionResumptionConfig(),
-        output_audio_transcription=types.AudioTranscriptionConfig() if (is_audio or is_native_audio) else None,
+        output_audio_transcription=(
+            types.AudioTranscriptionConfig() if (is_audio or is_native_audio) else None
+        ),
     )
 
     # Create LiveRequestQueue in async context (recommended best practice)
@@ -125,7 +132,7 @@ async def agent_to_client_messaging(websocket, live_events):
                 message = {
                     "mime_type": "text/plain",
                     "data": transcript_text,
-                    "is_transcript": True
+                    "is_transcript": True,
                 }
                 await websocket.send_text(json.dumps(message))
                 print(f"[AGENT TO CLIENT]: audio transcript: {transcript_text}")
@@ -138,23 +145,22 @@ async def agent_to_client_messaging(websocket, live_events):
             )
             if part:
                 # Audio data must be Base64-encoded for JSON transport
-                is_audio = part.inline_data and part.inline_data.mime_type.startswith("audio/pcm")
+                is_audio = part.inline_data and part.inline_data.mime_type.startswith(
+                    "audio/pcm"
+                )
                 if is_audio:
                     audio_data = part.inline_data and part.inline_data.data
                     if audio_data:
                         message = {
                             "mime_type": "audio/pcm",
-                            "data": base64.b64encode(audio_data).decode("ascii")
+                            "data": base64.b64encode(audio_data).decode("ascii"),
                         }
                         await websocket.send_text(json.dumps(message))
                         print(f"[AGENT TO CLIENT]: audio/pcm: {len(audio_data)} bytes.")
 
                 # If it's text and a partial text, send it (for cascade audio models or text mode)
                 if part.text and event.partial:
-                    message = {
-                        "mime_type": "text/plain",
-                        "data": part.text
-                    }
+                    message = {"mime_type": "text/plain", "data": part.text}
                     await websocket.send_text(json.dumps(message))
                     print(f"[AGENT TO CLIENT]: text/plain: {message}")
 
@@ -192,7 +198,9 @@ async def client_to_agent_messaging(websocket, live_request_queue):
                 # Data flows continuously without turn boundaries, enabling natural conversation
                 # Audio is Base64-encoded for JSON transport, decode before sending
                 decoded_data = base64.b64decode(data)
-                live_request_queue.send_realtime(Blob(data=decoded_data, mime_type=mime_type))
+                live_request_queue.send_realtime(
+                    Blob(data=decoded_data, mime_type=mime_type)
+                )
             else:
                 raise ValueError(f"Mime type not supported: {mime_type}")
     except WebSocketDisconnect:
@@ -230,7 +238,9 @@ async def websocket_endpoint(websocket: WebSocket, user_id: int, is_audio: str):
     print(f"Client #{user_id} connected, audio mode: {is_audio}")
 
     user_id_str = str(user_id)
-    live_events, live_request_queue = await start_agent_session(user_id_str, is_audio == "true")
+    live_events, live_request_queue = await start_agent_session(
+        user_id_str, is_audio == "true"
+    )
 
     # Run bidirectional messaging concurrently
     agent_to_client_task = asyncio.create_task(
@@ -250,7 +260,12 @@ async def websocket_endpoint(websocket: WebSocket, user_id: int, is_audio: str):
             if task.exception() is not None:
                 print(f"Task error for client #{user_id}: {task.exception()}")
                 import traceback
-                traceback.print_exception(type(task.exception()), task.exception(), task.exception().__traceback__)
+
+                traceback.print_exception(
+                    type(task.exception()),
+                    task.exception(),
+                    task.exception().__traceback__,
+                )
     finally:
         # Clean up resources (always runs, even if asyncio.wait fails)
         live_request_queue.close()
